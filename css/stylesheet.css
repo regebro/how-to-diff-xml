@@ -1,0 +1,238 @@
+@font-face {
+    font-family: 'DejaVuSansMonoBook';
+    src: url('../fonts/DejaVu Sans Mono/dejavusansmono-webfont.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'BloggerSans';
+    src: url('../fonts/Blogger Sans/BloggerSans.woff') format('woff'); /* Modern Browsers */
+    font-style: normal;
+    font-weight: normal;
+    text-rendering: optimizeLegibility;
+}
+
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: normal;
+  src: url(../fonts/Source Sans Pro/SourceSansPro-Regular.ttf) format('ttf');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Source Sans Pro';
+  font-style: normal;
+  font-weight: lighter;
+  src: url(../fonts/Source Sans Pro/SourceSansPro-Light.ttf) format('ttf');
+  unicode-range: U+0100-024F, U+0259, U+1E00-1EFF, U+2020, U+20A0-20AB, U+20AD-20CF, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+.step {
+    width: 900px;
+}
+
+html {
+    background-color: white;
+    text-align: center;
+    letter-spacing: 0;
+    font-size: 18px;
+}
+
+h1, h2, h3, h3, h4 {
+    font-family: 'Source Sans Pro';
+    font-weight: 600;
+    letter-spacing: -0.04em;
+}
+
+h1 {
+    font-size: 72px;
+}
+
+h2 {
+    font-size: 48px;
+}
+
+p, li {
+    font-family: 'Source Sans Pro';
+    font-size: 36px;
+}
+
+ul, ol {
+    display: inline-block;
+}
+
+pre {
+    font-family: DejaVuSansMonoBook;
+    text-align: left;
+    font-size: 170%;
+    width: -moz-fit-content;
+    width: -webkit-fit-content;
+    margin: auto;
+}
+
+table {
+    border-collapse: collapse;
+    margin: auto;
+}
+
+table td, table th {
+    padding: 1em;
+    border: 2px solid black;
+}
+
+table p {
+    margin: 0;
+}
+
+.poster {
+    margin: 0;
+    text-align: center;
+}
+
+.ref {
+  font-family: DejaVuSansMonoBook;
+  font-size: 100%;
+}
+
+div.highlight.present {
+    border: 5px dotted brown;
+    border-radius: 10px 10px 10px 10px;
+}
+
+.reveal {
+    transition-property: opacity;
+    transition-duration: 1s;
+}
+
+.future .reveal {
+    opacity: 0;
+}
+
+.active .reveal {
+    opacity: 100;
+}
+
+.past .reveal {
+    opacity: 100;
+}
+
+.concat1 {
+    height: 60px;
+    width: 716px;
+}
+
+.concat2 {
+    height: 60px;
+    width: 741px;
+}
+
+.sort1 {
+    height: 60px;
+    width: 356px;
+}
+
+.sort2 {
+    height: 45px;
+    width: 1040px;
+}
+
+.sort3 {
+    height: 60px;
+    width: 560px;
+}
+
+.sort4 {
+    height: 130px;
+    width: 459px;
+}
+
+.sort5 {
+    height: 60px;
+    width: 457px;
+}
+
+.mutable1 {
+    height: 60px;
+    width: 510px;
+}
+
+.mutable2 {
+    height: 60px;
+    width: 657px;
+}
+
+.mutable3 {
+    height: 60px;
+    width: 783px;
+}
+
+.defaultdict1 {
+    height: 60px;
+    width: 748px;
+}
+
+.defaultdict2 {
+    height: 60px;
+    width: 655px;
+}
+
+.cmp1 {
+    height: 60px;
+    width: 910px;
+}
+
+.cmp2 {
+    height: 45px;
+    width: 720px;
+}
+
+.cmp3 {
+    height: 60px;
+    width: 393px;
+}
+
+.left {
+    position: left;
+}
+
+.right {
+    position: right;
+}
+
+.footer img {
+    width: 16%;
+    position: absolute;
+    top: 0;
+    left: 1em;
+    transition-property: width, top, left;
+    transition-duration: 1s;
+    image-rendering: initial;
+}
+
+
+#step-1 .name {
+    height: 3.1em;
+}
+
+.impress-on-step-1 .footer img {
+    width: 16%;
+    top: 50%;
+    left: 42%;
+}
+
+.impress-on-step-2 .footer img {
+    width: 80%;
+    top: -50px;
+    left: 10%;
+}
+
+.blurb {
+    margin-top: 50%;
+    width: 80%;
+}
+
+.larger {
+    font-size: 48px;
+}
