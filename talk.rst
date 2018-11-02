@@ -87,11 +87,14 @@ SBT + magic = PDF
 
 ----
 
+xmldiff 0.6
+===========
+
 .. note::
 
     So, this was trickier than we though, so why not use somebodies library?
     So, we took over maintenance of the xmldiff library.
-    It existed, seemed to work but was unmaintained, which is why it wasn't
+    It existed, seemed to work, but was unmaintained, which is why it wasn't
     used from the start.
 
     I was tasked with implementing document diffing based on xmldiff.
@@ -106,11 +109,10 @@ SBT + magic = PDF
     That wasn't hard, but it didn't give nice diffs.
 
     What you can see here is that instead of inserting a new paragraph three,
-    and then changing the numbering, it modifies paragraph three, reinserts it as paraphraph 4,
-    and then deletes paragraph 4 and then reinserts it as paragraph five.
-
-    It's a bit unclear, because we also got these unicode error squares,
-    which I'll explain later, that's a bug in the code using xmldiff.
+    and then changing the numbering, it modifies paragraph three, reinserts
+    it as paraphraph 4. It's worse than this, because it then deletes
+    paragraph 4 and reinserts it as paragraph five, and only then does
+    it start to change the numbering, as it should do from the start.
 
 ----
 
@@ -118,11 +120,11 @@ The output was no good
 
 .. class:: substep
 
-    It was hard to debug
-
     There was a memory leak in the C code
 
-    I suck at C
+    My C coding skills are rusty
+
+    It was hard to maintain
 
     And some infinite loop somewhere
 
@@ -131,20 +133,21 @@ The output was no good
 
 .. note::
 
+    So, the output was no good.
     But that wasn't the only problem with xmldiff.
-
-    * But the code was nearly unmaintainable, the internal data structure was
-      a hierarchical list of lists with parents, ie, each child list had it's
-      parent as a part of the list, so if you tried to just print one entry,
-      you would print everything anyway. It was confusing.
-
-    * And I suck at C, and this had it's central parts in C, and the Python
-      code was very find of one letter variable names, like typical C, so yeah,
-      it was hard to read.
 
     * And there was a memory leak in the C code
 
-    * And some infinite loop somewhere
+    * I haven't done any major programming in C since the 90s, and this had
+      it's central parts in C, and the Python code was very fond of one letter
+      variable names, like typical C, so yeah, it was hard to read.
+
+    * But the code was hard to maintain and debug. The internal data
+      structure was a hierarchical list of lists with parents, ie, each child
+      list had it's parent as a part of the list, so if you tried to just print
+      one entry, you would print everything anyway. It was confusing.
+
+    * And there was some infinite loop somewhere
 
     * And it was really hard to improve the matching
 
@@ -164,7 +167,7 @@ Change Detection in Hierarchically Structured Information
     This paper assumes a very simplified view of a hierachy, where a node has
     a value and a list of children, and that's it. XML doesn't look
     like that. Every node has a tag, can have attributes, and children but also
-    contained texts. And the only unique ID you can count on is the XPath.
+    contained texts
 
     So, the xmldiff library did something clever, it transformed the tree of
     complex nodes to a tree of simple nodes.
@@ -186,6 +189,8 @@ Change Detection in Hierarchically Structured Information
     This is much more similar to how the paper on hierarchical diffing works,
     so it then gets easy to apply the algorithm.
 
+    But let's just change the numbering here.
+
 ----
 
 .. code:: xml
@@ -199,10 +204,10 @@ Change Detection in Hierarchically Structured Information
 
 .. note::
 
-    But here we have the same node, except, we have increased the numbering,
-    in other words, there was another section inserted before this node.
+    Here we have the same node, but there was another section inserted
+    before this node.
 
-    But when the library is to make a diff and compare these two nodes,
+    When xmldiff is to make a diff and compare these two nodes,
     it will first notice that the two nodes with numbers have changed,
     those values are different, so the nodes don't match any more.
 
@@ -246,6 +251,43 @@ Change Detection in Hierarchically Structured Information
 
 :data-x: r9200
 
+But what is diffing, really?
+============================
+
+.. class:: substep
+
+    Find pieces that match
+
+    Generate an Edit Script
+
+    Output
+
+.. note::
+
+    There are three basic steps in diffing, you first look for matches
+    and differences, then you use that to generate an edit script, and
+    then you output something.
+
+    An edit script is a list of actions that transform one version
+    to another.
+
+    The output is typically something that is human readable, but if you
+    are just going to store it in a database it can be something more
+    compact.
+
+----
+
+.. image:: images/gitdiff.png
+    :width: 100%
+
+.. note::
+
+    A typical text diff only has two actions in it's edit script:
+    Remove line and insert line. The output displays this in a nice
+    readable colorize format.
+
+----
+
 Diffing XML is hard!
 ====================
 
@@ -286,36 +328,20 @@ Longest Common Subsequence
     Basically you look for bits that are the same and come in the same order.
     This doesn't work, because the data is hierarchical.
     You can use it as a part solution, I'll come to that later, but it doesn't
-    work as the main solution.
+    work as the main solution. I tried, I spent several days on that
+    effort.
 
 ----
 
 Two different use cases
 =======================
 
-.. class:: substep larger
-
 Change management
-
-.. class:: substep
-
-Small diffs
-
-.. class:: substep
-
-Move support
-
-.. class:: substep larger
+-----------------
 
 GUI diff
+--------
 
-.. class:: substep
-
-Pretty output
-
-.. class:: substep
-
-Semantically meaningful
 
 .. note::
 
@@ -323,6 +349,19 @@ Semantically meaningful
     similar enough in both cases so you don't want to have two different
     implementations. But the usecases are still quite different and have
     different requirements.
+
+----
+
+Change management
+=================
+
+.. class:: substep
+
+    Small diffs
+
+    Move support
+
+.. note::
 
     One case is when we want to have a change management system, like some
     sort of source control, but for hierarchical data.
@@ -335,10 +374,14 @@ Semantically meaningful
 
 ----
 
-Semantically meaningful
-=======================
+GUI diff
+========
 
 .. class:: substep
+
+    Pretty output
+
+    Semantically meaningful
 
     .. image:: images/semanticbad.png
 
@@ -358,17 +401,11 @@ Semantically meaningful
 
 ----
 
-:data-y: r800
-:data-x: r1200
+Complex values means difficult comparisons
+==========================================
 
-.. class:: partly3 reveal
-
-
-----
-
-:data-y: r0
-:data-x: r-1200
-
+.. image:: images/event_tree2b.png
+    :width: 60%
 
 .. note::
 
@@ -376,26 +413,73 @@ Semantically meaningful
     change mean a node that should be matched won't be matched. We need to
     look at the node as a whole, but how should different changes be weighed?
     There's no obvious answer, and the algorithm we ended up with is very
-    much created by trial and error. Making changes and see what happened.
+    much created by trial and error, by making changes and seeing what happened.
+
+    But we are open to adding new ways of comparing the nodes, if people need
+    it.
+
+    What we do is basically make a string out of the nodes attributes, and
+    it's contained texts, and then use the standard library's ``difflib`` to
+    get a similarity ratio out of that. And that actually uses the Longest
+    Common Subsequence method I mentioned before.
+
+    If the node has children, I also take that into account in equal measure
+    to the difflibs ratio. It works, but there is a lot of room for
+    customizable options there in the future.
 
 ----
 
-:data-x: r2400
+Small changes - large effects
+=============================
 
-.. class:: partly4
+.. image:: images/xmldiff-first-effort.png
+    :width: 100%
 
-    Small changes in the match can mean big changes in the diff
+.. note::
+
+    If you make a small change in the matching algorithm that can mean that
+    nodes match differently, and that can big very big changes in graphical
+    output. For example, by fixing the matching so that the change in
+    numbering doesn't create a mismatching, this can turn into...
+
+----
+
+Small changes - large effects
+=============================
+
+.. image:: images/xmldiff-best-effort.png
+    :width: 100%
+
+.. note::
+
+    ... this! So much better!
+
+----
+
+
+How to diff XML
+===============
+
+.. class:: substep
+
+    Compare node for node
+
+    Find the changes
+
+
+.. note::
+
+    So, how do you diff XML?
+
+    Well, for each node in one file you look for the best match you can find
+    in the other file. Then you mark those as matched.
+
+    Once you have lists of matched and unmatched no
+
 
 
 ----
 
-:data-y: r2400
-
-
-
-----
-
-* So how to do it
 
     * General procedure: Compare everything with everything
       Stable marriage problem?
