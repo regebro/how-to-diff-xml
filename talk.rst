@@ -59,7 +59,7 @@ SBT + magic = PDF
 
     So we have loads of documents, many of them generated through our own template language,
     unsurprisingly called "SBT" for "Shoobox templates".
-    (Psst, it's really mostly RML + ZPT and a bit of magic).
+    (Psst, it's really mostly reportlab RML + ZPT and a bit of magic).
 
 ----
 
@@ -73,8 +73,11 @@ SBT + magic = PDF
 
 ----
 
-.. image:: images/docdiff.png
-    :width: 100%
+.. image:: images/docdiffsemantic.png
+
+.. class:: substep
+
+    .. image:: images/docdiffnope.png
 
 .. note::
 
@@ -82,8 +85,14 @@ SBT + magic = PDF
     we need the sort of graphical difference where inserts are shown in green,
     and delets are shown in red and with a strike through.
 
-    The first effort worked, but has less than optimal results.
-    It was implemented by someone else than me, and took a month or so.
+    It should be easy to read, and semantically meaningful.
+    Ie, if you replace a word, it should show that in the
+    diff, it shouldn't show that what characters in that word needs replacing.
+    That's not readable.
+
+    The first effort of making a diff for templates worked, but has less than
+    optimal results. It was implemented by someone else than me, and I'm told
+    it took a month or so. Clearly faster programmers than me at work.
 
 ----
 
@@ -92,10 +101,12 @@ xmldiff 0.6
 
 .. note::
 
-    So, this was trickier than we though, so why not use somebodies library?
-    So, we took over maintenance of the xmldiff library.
-    It existed, seemed to work, but was unmaintained, which is why it wasn't
-    used from the start.
+    So, diffing XML was trickier than we though, so why not use somebodies
+    library? So, we took over maintenance of the xmldiff library. It existed,
+    seemed to work, but was unmaintained, which is why it wasn't used from
+    the start.
+
+    It isn't only a library, it's also a command line tool.
 
     I was tasked with implementing document diffing based on xmldiff.
 
@@ -106,7 +117,7 @@ xmldiff 0.6
 
 .. note::
 
-    That wasn't hard, but it didn't give nice diffs.
+    That wasn't hard, but it *also* didn't give nice diffs.
 
     What you can see here is that instead of inserting a new paragraph three,
     and then changing the numbering, it modifies paragraph three, reinserts
@@ -130,182 +141,95 @@ The output was no good
 
     And it was really hard to improve the matching
 
-
 .. note::
 
     So, the output was no good.
     But that wasn't the only problem with xmldiff.
 
-    * And there was a memory leak in the C code
+    * -> There was a memory leak in the C code. -> I haven't done any major
+      programming in C since the 90s, and this had it's central parts in C.
 
-    * I haven't done any major programming in C since the 90s, and this had
-      it's central parts in C, and the Python code was very fond of one letter
-      variable names, like typical C, so yeah, it was hard to read.
+    * -> The Python code was very fond of one or two letter variable names, like
+      typical C, so yeah, it was hard to read. The internal data structure was
+      a hierarchical list of lists with the parent list contained in the child
+      list, so just infinite loops of lists of lists.
 
-    * But the code was hard to maintain and debug. The internal data
-      structure was a hierarchical list of lists with parents, ie, each child
-      list had it's parent as a part of the list, so if you tried to just print
-      one entry, you would print everything anyway. It was confusing.
+    * -> And there was some infinite loop somewhere, maybe because of the data structure?
 
-    * And there was some infinite loop somewhere
+    * -> And it was really hard to improve the matching, for reasons I'll come to later.
 
-    * And it was really hard to improve the matching
-
-----
-
-Change Detection in Hierarchically Structured Information
-=========================================================
-
-.. note::
-
-    The matching was hard to improve, because the xmldiff library had done
-    something clever. Always a dangerous thing.
-
-    The basic algorithm from xmldiff is outlined in a paper with the sexy name
-    "Change Detection in Hierarchically Structured Information".
-
-    This paper assumes a very simplified view of a hierachy, where a node has
-    a value and a list of children, and that's it. XML doesn't look
-    like that. Every node has a tag, can have attributes, and children but also
-    contained texts
-
-    So, the xmldiff library did something clever, it transformed the tree of
-    complex nodes to a tree of simple nodes.
+    For these reasons I ended up scratching all of xmldiff, and writing a new
+    library, which we after some discussion and deliberation decided to call
+    <fanfare> xmldiff!
 
 ----
 
-.. code:: xml
+xmldiff (again!)
+================
 
-    <para section="3">
-        <b>3. </b>Lorem ipsum have some gypsum
-    </para>
-
-.. image:: images/event_tree1.png
-    :width: 60%
-
-.. note::
-
-    Now every node has an type, a value, and a list of children.
-    This is much more similar to how the paper on hierarchical diffing works,
-    so it then gets easy to apply the algorithm.
-
-    But let's just change the numbering here.
-
-----
-
-.. code:: xml
-
-    <para section="4">
-        <b>4. </b>Lorem ipsum have some gypsum
-    </para>
-
-.. image:: images/event_tree2a.png
-    :width: 60%
-
-.. note::
-
-    Here we have the same node, but there was another section inserted
-    before this node.
-
-    When xmldiff is to make a diff and compare these two nodes,
-    it will first notice that the two nodes with numbers have changed,
-    those values are different, so the nodes don't match any more.
-
-    Their parent nodes the attribute and the b node, they now have no
-    children in common with the old version of the tree.
-    So they don't match.
-
-    Which means the top node has two out of three children that do not match,
-    so it doesn't match.
-
-----
-
-.. code:: xml
-
-    <para section="4">
-        <b>4. </b>Lorem ipsum have some gypsum
-    </para>
-
-.. image:: images/event_tree2b.png
-    :width: 60%
-
-.. note::
-
-    So to us, these nodes are obviously the same, just different numbering,
-    but to xmldiff it was obviously NOT the same node, and the result is
-    what we saw before
-
-----
-
-:data-x: r-8000
-
-.. note::
-
-    Whole sections being deleted and reinserted instead of updated.
-
-    So, after trying to fix this for weeks, I started looking into
-    writing something from scratch. Something simpler. Diffing can't be
-    that hard, can it?
-
-----
-
-:data-x: r9200
-
-But what is diffing, really?
-============================
 
 .. class:: substep
 
-    Find pieces that match
+    Almost entirely incompatible
 
-    Generate an Edit Script
+    Pure-python
 
-    Output
+    Better results
 
-.. note::
+    Easier to use as a library
 
-    There are three basic steps in diffing, you first look for matches
-    and differences, then you use that to generate an edit script, and
-    then you output something.
-
-    An edit script is a list of actions that transform one version
-    to another.
-
-    The output is typically something that is human readable, but if you
-    are just going to store it in a database it can be something more
-    compact.
-
-----
-
-.. image:: images/gitdiff.png
-    :width: 100%
+    Supports writing formatters!
 
 .. note::
 
-    A typical text diff only has two actions in it's edit script:
-    Remove line and insert line. The output displays this in a nice
-    readable colorize format.
+    This has been released as xmldiff version 2, current version is 2.2.
+
+    ->Almost entirely incompatible
+
+    ->Pure-python
+
+    ->Better results
+
+    ->Easier to use as a library
+
+    ->Supports writing formatters!
 
 ----
 
-Diffing XML is hard!
-====================
+How do you diff?
+================
 
-.. class:: substep
+Match
+-----
 
-    You can't use normal diffing algorithms
+Edit
+----
 
-    We want to support two different use cases
+Output
+------
 
-    Complex values means difficult comparisons
+.. note::
 
-    Small changes make big differences
+    So, how DO you diff? Before we talk XML,
+    let's look at a simpler diff case: Text files.
 
-    It's slow
+    There's three stages to diffing. Matching, edit, output.
 
 ----
 
-:data-x: r1200
+Matching
+========
+
+.. note::
+
+    In text files when you want to output a diff you want to see, diffing is
+    typically done line by line, so matching is easy:
+    Are two lines exactly the same? Then they match.
+
+    But how do you match? Just going line by line and checking? No, you use
+    an algorithm called Longest Common Subsequence.
+
+----
 
 Longest Common Subsequence
 ==========================
@@ -320,172 +244,512 @@ Longest Common Subsequence
 
 .. note::
 
-    You can't use normal diffing algorithms
-
-    The standard way of diffing linear data like code and text files,
-    is something called Longest Common Subsequence.
-
     Basically you look for bits that are the same and come in the same order.
-    This doesn't work, because the data is hierarchical.
-    You can use it as a part solution, I'll come to that later, but it doesn't
-    work as the main solution. I tried, I spent several days on that
-    effort.
+
+    Compare the old list, with the new list, and we get an LCS list. The
+    longest list of items where all items are in the same order in both
+    files.
+
+    For a text file, you run lcs on the lines. From this we get a list of
+    lines that match.
 
 ----
 
-Two different use cases
-=======================
+Editing
+=======
 
-Change management
------------------
+.. code::
 
-GUI diff
---------
-
+    Delete 3
+    Insert 9 at position 3
+    Delete 5
+    Insert 5 at position 6
+    Delete 8
+    Insert 7 at position 8
 
 .. note::
 
-    There's two cases where you want to diff XML, and the algorithm is
-    similar enough in both cases so you don't want to have two different
-    implementations. But the usecases are still quite different and have
-    different requirements.
+    From the list of matching nodes we generate an edit script,
+    which is a list of edit actions that turn file1 into file 2.
+    The edit actions are basically "delete lines x-y", insert line at z, etc.
+
+    Edit scripts should preferably be compact, so they can be used to store
+    different versions in a change management system, without using up
+    silly amounts of space. The output of course have no such requirement,
+    it should instead be easy to read.
 
 ----
 
-Change management
-=================
+Output
+======
 
-.. class:: substep
-
-    Small diffs
-
-    Move support
+.. image:: images/gitdiff.png
 
 .. note::
 
-    One case is when we want to have a change management system, like some
-    sort of source control, but for hierarchical data.
+    And then we use that edit script to make a nice looking output output (pic)
 
-    In that case we want the diffs to be small. We don't care if they make
-    semantic sense, just the smallest diff possible, thank you!
-
-    And we also want support for moving data from one tree to another, we
-    don't want to have to delete it in one place, and add it in another.
+    Not so hard, is it? But if XML was this easy, I wouldn't have a talk.
+    So, how to do it?
 
 ----
 
-GUI diff
-========
+Matching XML
+============
 
-.. class:: substep
+.. code:: xml
+    :class: substep
 
-    Pretty output
+    <para section="3">
+        <b>3. </b>Lorem ipsum have some gypsum
+    </para>
 
-    Semantically meaningful
-
-    .. image:: images/semanticbad.png
-
-    .. image:: images/semanticgood.png
-
+.. image:: images/event_tree1.png
+    :width: 60%
+    :class: substep
 
 .. note::
 
-    And the second usecase we want to support is the one I mentioned
-    before where we want to see pretty and colorful diffs of the actual
-    documents. And there we have two different requirements.
-    It should be easy to read, and semantically meaningful.
-    Ie, if you change the word "bat" for "car" it should show that in the
-    diff, it shouldn't show that the b has been replaced with c and the t with
-    an r.
+    First of all, the matching. The node matching is tricky for XML. For text
+    it's easy, text is text. And scientific papers on hierarchical diffing
+    generally view hierarchies as nodes that have a value, and children, and
+    that's it.
 
+    So, xmldiff 0.6 made something clever here, it converted one complex XML node
+    to many simple nodes.
+
+    -> For example, these two nodes, a para node and a b node, gets converted
+    into six simple nodes.
+    ->
+
+    Now every node only has an type, a value, and children.
+    Comparison is now easy!
 
 ----
 
-Complex values means difficult comparisons
-==========================================
+A new version
+=============
+
+.. code:: xml
+
+    <para section="4">
+        <b>4. </b>Lorem ipsum have some gypsum
+    </para>
+
+.. image:: images/event_tree2a.png
+    :width: 60%
+
+.. note::
+
+    But clever is always dangerous in computing...
+
+    What happen if we insert another paragraph node before this node?
+    Well, the number changes, which changes the value in two nodes.
+
+    When xmldiff is to make a diff and compare these two nodes,
+    it will first notice that the two nodes with numbers have changed,
+    those values are different, so the nodes don't match any more.
+
+    Their parent nodes; the section attribute and the b node, they now have no
+    children in common with the old version of the tree.
+    So they don't match.
+
+----
+
+No match!
+=========
+
+.. code:: xml
+
+    <para section="4">
+        <b>4. </b>Lorem ipsum have some gypsum
+    </para>
 
 .. image:: images/event_tree2b.png
     :width: 60%
 
 .. note::
 
-    As we saw in this case, the complexity of the node would make this minor
-    change mean a node that should be matched won't be matched. We need to
-    look at the node as a whole, but how should different changes be weighed?
-    There's no obvious answer, and the algorithm we ended up with is very
-    much created by trial and error, by making changes and seeing what happened.
+    Which means the top node has two out of three children that do not match,
+    so it doesn't match.
 
-    But we are open to adding new ways of comparing the nodes, if people need
-    it.
-
-    What we do is basically make a string out of the nodes attributes, and
-    it's contained texts, and then use the standard library's ``difflib`` to
-    get a similarity ratio out of that. And that actually uses the Longest
-    Common Subsequence method I mentioned before.
-
-    If the node has children, I also take that into account in equal measure
-    to the difflibs ratio. It works, but there is a lot of room for
-    customizable options there in the future.
+    So to us, these nodes are obviously the same, just different numbering,
+    but to xmldiff it was obviously NOT the same node, and the result is
+    what we saw before.
 
 ----
 
-Small changes - large effects
-=============================
-
-.. image:: images/xmldiff-first-effort.png
-    :width: 100%
+:data-x: r-16000
 
 .. note::
 
-    If you make a small change in the matching algorithm that can mean that
-    nodes match differently, and that can big very big changes in graphical
-    output. For example, by fixing the matching so that the change in
-    numbering doesn't create a mismatching, this can turn into...
+    Bad matchings
 
 ----
 
-Small changes - large effects
-=============================
+:data-x: r17200
 
-.. image:: images/xmldiff-best-effort.png
-    :width: 100%
+Node:
+=====
+
+.. code:: xml
+
+    <para section="3">
+        <b>3. </b>Lorem ipsum have some gypsum
+    </para>
+
+Value:
+======
+
+.. code::
+
+   "section:3 Lorem ipsum have some gypsum"
 
 .. note::
 
-    ... this! So much better!
+    You need to look at a node  as a whole, not as independent pieces.
+
+    I make a string out of the nodes attributes and it's texts, and then use
+    the standard library's ``difflib`` to get a similarity ratio out of that.
+    And that actually uses the Longest Common Subsequence method I mentioned
+    before. If the node has children, I also take that into account in equal
+    measure to the difflibs ratio.
+
+    This works, but there is a lot of room for alternatives here. I've f ex
+    tried dealing with attributes separately from texts, so that there could
+    be different weights for text, children and attributes. But I haven't
+    been able to significantly improve what I have right now, which I arrived
+    at more or less by trial and error.
 
 ----
 
+:data-x: r1200
 
-How to diff XML
-===============
+LCS
+===
 
 .. class:: substep
 
-    Compare node for node
+    Fast, bad matching
 
-    Find the changes
+.. note::
+
+    Longest common subsequence can be used in theory. You can flatten both trees
+    with a traversal, and then use LCS on that, -> but it leaves a lot of nodes
+    unmatched that could be matched. It also means you don't always find the
+    best match, only a good enough match, wich is far from optimal.
+
+    The diffs get very big, not at all compact as we want them
+
+----
+
+Compare all nodes to all nodes
+==============================
+
+.. class:: substep
+
+    Nightmarishly slow
+
+.. note::
+
+    Finding the best possible match over two big sets is often called the
+    stable marriage problem. And there are algorithms for this, but since
+    you need to check what the best possible match is for all nodes,
+    you really need to compare every node to every node. ->
+
+    There are shortcuts, but they aren't good enough.
+
+----
+
+Single-iteration best match
+===========================
+
+.. class:: substep
+
+    Good enough!
+
+.. note::
+
+    What I did early on was simply to go through each node from one tree and
+    find the best match for that node, and then remove both nodes from
+    the lists of unmatched nodes. That means that the best match from the
+    perspective of one tree always wins, but that's not always the best match
+    from the perspective of the other tree.
+
+    But this gives a decent match for our use case. But we could still have
+    this take half a minute for some of our documents, so I hope you forgive
+    me for not even trying the previous stable marriage algorithm...
+
+----
+
+XML edit actions
+================
+
+For text: Insert, Delete, Move
+
+.. class:: substep
+
+    For XML: DeleteNode, InsertNode, RenameNode, MoveNode
+
+    DeleteAttrib, InsertAttrib, RenameAttrib, UpdateAttrib
+
+    UpdateTextIn, UpdateTextAfter
+
+    InsertComment
+
+.. note::
+
+    Where a linear file can get away with just two actions, insert and
+    delete, and if they want to be fancy, a move action, xml needs more.
+
+    -> We can rename nodes as well, so we get four actions,
+    -> And we can delete, insert rename and update attributes.
+    -> And, you can update texts, both inside and after a node.
+    -> And you need a separate action to insert comments, as they aren't real
+    nodes.
+
+    So, eleven different actions. And notice we don't support moving
+    attributes or texts, in theory we could have that as well, but detecting
+    moves of attributes and nodes would take quite some extra processing
+    power to detect, so we skip that.
+
+----
+
+Making the edit script
+======================
+
+.. class:: substep
+
+    Walk the "new" tree, node by node.
+
+    If it has a match, look for differences.
+
+.. note::
+
+    Now we have a list of node matchings.
+    Then we go over the tree again, node by node.
+
+    -> If that node has a match, we must look at what the differences are. In
+    the plain text case we can match on equality, but for complex nodes like
+    XML we can't, because like with the renumbering case we would get a lot
+    of misses when we should have had matches.
+
+    -> If it does not have a match, insert it!
+
+    -> Lastly insert all nodes from the "new" tree without a match.
+
+----
+
+Generate output
+===============
+
+.. code::
+
+    [update-attribute, /para[1], section, "4"]
+    [update-text, /para/b[1], "4. "]
+
+.. note::
+
+    We can of course just print out the edit script. But as I mentioned, we
+    want that nice GUI diff. How do you do THAT?
+
+    What we want is an XML output that we still can render to a document,
+    but which includes diff information. We want this:
+
+----
+
+End Result
+==========
+
+.. code::
+
+    <para section="4" class="modified">
+        <b><span class="delete">3</span><span class="insert">4</span>. </b>
+        Lorem ipsum have some gypsum
+    </para>
+
+.. note::
+
+    So how can we get there? Xmldiff 2 includes formatters for different
+    outputs, including one just called "XML" that will give this sort of
+    output:
+
+----
+
+XML Output
+==========
+
+.. code::
+
+    <para section="4" diff:update-attr="section:3">
+        <b><diff:delete>3</diff:delete><diff-insert>4</diff:insert>. </b>
+        Lorem ipsum have some gypsum
+    </para>
 
 
 .. note::
 
-    So, how do you diff XML?
+    The translation of these tags to span tags or class attributes is fairly
+    straightforward with XSLT, although it of course depends on your XML
+    format. If it's very complex, then the XSLT can get very complex as well.
 
-    Well, for each node in one file you look for the best match you can find
-    in the other file. Then you mark those as matched.
-
-    Once you have lists of matched and unmatched no
-
-
+    And you say "Oooh, I'm gonna diff my HTML with that!" then we come to
+    the next problem!
 
 ----
 
+Formatted text
+==============
 
-    * General procedure: Compare everything with everything
-      Stable marriage problem?
+From ``<p>This is text that can have formatting</p>``
 
-    * But that's gets SLOOOOOW
+To ``<p>This <b>is</b> text that can have <i>formatting</i></p>``
 
-* Speedups
+.. note::
 
-* Result: Better AND faster, even without C optimizations
+    Formatted text has it's own little issues.
+
+    For example, if you simply add a bit of formatting to some text, you have
+    very big effects.
+
+    The text of the P-node has changed from "This is text that can have
+    formatting" to "This". The node also have two new children.
+
+    The old P node and the new P node will not match. Oy vey, what to do?
+
+----
+
+Unicode stubs
+=============
+
+``<p>This \ue000is\ue001 text that can have \ue002formatting\ue003</p>``
+
+.. note::
+
+    We replace tags with unicode characters before the diffing.
+    This means the nodes will match, but since the contained text isn't the
+    same we get an edit script action to update that text.
+
+    The formatter that outputs the XML knows that these unicode characters
+    are replacements, and will insert the correct tags.
+
+----
+
+Unicode stubs
+=============
+
+.. code::
+
+    <p>This <b diff:insert="">text</b> that can have
+    <i diff:insert="">formatting</i></p>
+
+----
+
+Soooo slooow
+============
+
+.. class:: substep
+
+    Stop looking when you find perfection
+
+    Use faster algorithms from ``difflib``
+
+    Implement the LCS "fast-match" algorithm
+
+.. note::
+
+    As I mentioned before, xmldiff 2.0 was very slow. The worst diff case we
+    had took more than one and a half minute. So I went on to trying to
+    improve that, making the matching faster etc.
+
+    One of the biggest speedups was implementing a shortcut. If any match was
+    100%, then we'd stop looking for better matchings. I also added a flag
+    to choose between three different ways of calculating how different two
+    nodes are, "accurate" (the one used in 2.0), "fast" (good enough) and
+    "faster" which is only so-so.
+
+----
+
+Harder, Better, Faster, Stronger
+================================
+
+.. class:: substep
+
+    xmldiff 0.6: 8 seconds
+
+    xmldiff 2.0: 100 seconds
+
+    xmldiff 2.1: 5 seconds
+
+    With faster ratio-mode: 2 seconds
+
+    With fast-match: 1.5 seconds
+
+.. note::
+
+    By the end, I had gotten the time down for a typical XML document to 20%
+    of the time. In our worst case example, we went from a 100 seconds to 5.
+
+    I also implemented that quick and inaccurate matching which gets that down
+    to three seconds.
+
+    And how to the old xmldiff 0.6 do on that document? It takes 8 seconds.
+    So yes, we get better matching AND faster diffing, even in pure python.
+
+----
+
+How can YOU use it?
+===================
+
+.. code::
+
+    >>> from xmldiff import main
+    >>> main.diff_files("../tests/test_data/insert-node.left.html",
+    ...                 "../tests/test_data/insert-node.right.html")
+    [UpdateTextIn(node='/body/div[1]', text=None),
+     InsertNode(target='/body/div[1]', tag='p', position=0),
+     UpdateTextIn(node='/body/div/p[1]', text='Simple text')]
+
+.. note::
+
+    You can of course use it from the command line, but that's not
+    so exciting. What you really want to know is how to use it from Python,
+    amiright?
+
+    Well, it has a very simple API, here is one example, to diff two files.
+    The result you get in that case is an edit script.
+
+----
+
+XML Output
+==========
+
+.. code::
+
+    >>> from xmldiff import formatting
+    >>> formatter = formatting.XMLFormatter(
+    ...     text_tags=['p'], formatting_tags=['i', 'b'])
+    >>> print(main.diff_files("../tests/test_data/insert-node.left.html",
+    ...                       "../tests/test_data/insert-node.right.html",
+    ...                       formatter=formatter))
+    <body xmlns:diff="http://namespaces.shoobx.com/diff">
+      <div id="id">
+        <p diff:insert="">Simple text</p>
+      </div>
+    </body>
+
+.. note::
+
+    Or you can specify the XMLFormmater to get XML output.
+    The text_tags argument are a list of tags that contain formatted text,
+    which enables the unicode substitution I mentioned before.
+    A list of formatting_tags is there to enable the feature that reformmated
+    text isn't shown as deleted with one format and inserted with another,
+    but the text is instead shown in a way that makes clear that only the
+    formatting has changed. How that is is up to you, but maybe with a yellow
+    background?
+
+----
+
+Questions?
+==========
