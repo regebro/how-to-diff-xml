@@ -600,8 +600,84 @@ XML Output
     straightforward with XSLT, although it of course depends on your XML
     format. If it's very complex, then the XSLT can get very complex as well.
 
-    And you say "Oooh, I'm gonna diff my HTML with that!" then we come to
-    the next problem!
+----
+
+XSLT gotcha
+===========
+
+.. code:: xml
+
+  <app:term name="expenses" set="advisor"
+      allowCustom="True">
+    <app:option name="bear_own">
+      <whatever/>
+    </app:option>
+
+    <app:option name="reimburse">
+      <blahblah/>
+    </app:option>
+  </app:term>
+
+.. note::
+
+    We have XML that looks like this. It's basically a sort of app-specific
+    switch statement.
+
+    And we have XSLT that deals with this.
+
+----
+
+.. code:: xml
+
+      <xsl:value-of
+          select="sbx:getFieldTitle($content-expr)" />
+
+.. note::
+
+    And one part of that XSLT is this. Yes, in XSLT you can call functions,
+    and with lxml, which we are using, those can be python functions.
+
+    That function gets the title of the field from the app:term, and sets it
+    on the app:option.
+
+    But, if app:option is not a child of an app:term, that function breaks!
+    Now how can that happen after diffing? Well, it's a node mismatch again.
+    In one version a section of the document might be inside one of these
+    app:term/app:option tags, and later version, that section is inside some
+    other sort of tag.
+
+    And this can lead to a mismatch. Some nodes attributes and content is
+    very similar to the app:term, so we get a match! But only for one of the
+    options. The other options get deleted.
+
+----
+
+.. code:: xml
+
+  <asection name="expenses" allowCustom="True"
+      diff:rename="app:term" diff:delete-attr="set">
+    <whatever diff:delete="" diff:insert="" />
+    <app:option name="bear_own" diff:delete="">
+    </app:option>
+
+    <blahblah diff:delete="" diff:insert="" />
+    <app:option name="reimburse" diff:delete="">
+    </app:option>
+  </app:term>
+
+.. note::
+
+    The end result is XML that looks somewhat like this. Note now that the
+    app:option tags now are deleted, but more importantly, the app:term has
+    been renamed and one of the attributes have been deleted.
+    This breaks the Python function that is being called!
+
+    So you have to either fix the function so it doesn't break in this case,
+    or modify the XSLT so that it isn't called for deleted nodes.
+
+    But most likely you don't do this advanced stuff, so you might think
+    "Oooh, I'm gonna diff my HTML docs with xmldiff!" and then we come to the
+    next problem!
 
 ----
 
@@ -680,6 +756,8 @@ Soooo slooow
 
     Implement the LCS "fast-match" algorithm
 
+    Caching
+
 .. note::
 
     As I mentioned before, xmldiff 2.0 was very slow. The worst diff case we
@@ -693,7 +771,7 @@ Soooo slooow
     "faster" which is only so-so.
 
     -> And I added a fast-match option, which uses LCS as a first step to find
-    matches quick, and then do the slower algorithms on the unmatched nodes.
+    matches quick, and then do the slower algorithms on the unmatched nodes. -> Also a bit of caching.
 
 ----
 
