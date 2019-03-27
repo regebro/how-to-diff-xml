@@ -253,6 +253,39 @@ Longest Common Subsequence
 
 ----
 
+MAKE AN IMAGE HERE
+
+.. note::
+
+    Longest Common Subsequence makes a grid of all items vs all items,
+    and then walks through them to find the shortest path from one corner to the other corner.
+
+    As you see, this grid gets quickly larger with increasing file sizes,
+    and it's worse than that,
+    because each cell also keeps track of the way you reach that cell,
+    so that if you end up in the same cell twice you can see how you got there.
+    It can use a lot of memory, typically time and memory is quadratic.
+
+----
+
+MAKE AN IMAGE HERE
+
+.. note::
+
+    But I read through all Python implementations of LCS I could find,
+    and I found one using a common version that just keeps track of the paths,
+    and doesn't generate the actual array, and doesn't keep the history per node.
+
+    Another good trick is to compare the start and the end of the sequences,
+    and skip anything that us equal there.
+
+    The end result has 30 lines of actual code,
+    so it's fairly compact and fast, but I'm sure it still can be improved.
+    If you like that kind of challenge to make this faster or use less memory
+    please dig your teeth into it.
+
+----
+
 Editing
 =======
 
@@ -266,6 +299,8 @@ Editing
     Insert 7 at position 8
 
 .. note::
+
+    After matching comes editing.
 
     From the list of matching nodes we generate an edit script,
     which is a list of edit actions that turn file1 into file 2.
@@ -678,6 +713,21 @@ XSLT gotcha
     But most likely you don't do this advanced stuff, so you might think
     "Oooh, I'm gonna diff my HTML docs with xmldiff!" and then we come to the
     next problem!
+
+
+----
+
+Matching text
+=============
+
+
+.. note::
+
+    Another problem we get here is how to match text. If we just use LCS on
+    the text, we'll get very hard to read diffs.
+
+    So we need some sort of semantic diffing there.
+    And we decided to use Googles diff_match_patch_library modules.
 
 ----
 
