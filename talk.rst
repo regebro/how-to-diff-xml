@@ -4,7 +4,7 @@
 
 .. footer::
 
-    .. image:: images/shoobx.png
+    .. image:: images/britecore.png
 
 ----
 
@@ -17,24 +17,47 @@ How to diff XML
 
 .. class:: location
 
-    Plone Conf 2018, Tokyo
+    wroc.py, April 2019
 
 ----
 
 .. class:: blurb
 
-    Shoobx is the only comprehensive platform for incorporation, employee
-    onboarding, equity management, fundraising, board & stockholder
-    communication, and more.
+BriteCore is the leading technology platform for modern insurance providers.
+Fully managed through Amazon Web Services cloud, BriteCore is continually
+updated to guarantee maximum security, efficiency, and durability at scale.
+Over 45 Carriers, MGAs, and InsureTechs rely on BriteCore for their core, data,
+and digital needs.
 
 .. note::
 
-    I work for Shoobx.
+    I work for BriteCore.
 
-    We do a lot of cool things that involve legal documents,
-    and long story short, if you have a Delaware C-Corp, you need us.
-    If you are gonna do a startup, you need us.
-    Maybe you don't know it yet, but you do.
+    We do the type of software that insurance companies use to deal with
+    insurance policies and claims.
+
+    We are over a 100 people right now, we work remotely, and yes, we are hiring.
+    I'm not currently involved in the hiring procedures, but I will be in the future.
+    Go to britecore.com, there's a careers link in there somewhere,
+    I'd love it if we got more people in Wroclaw.
+
+----
+
+.. image:: images/shoobx.png
+    :width: 600px
+
+.. note::
+
+    However, when I did the stuff I'm talking about here, I worked for another
+    company, called Shoobx.
+
+    Shoobx does a lot of cool things that involve legal documents,
+    and long story short, if you have a Delaware C-Corp, you need Shoobx.
+    If you are gonna do a US startup, you need Shoobx.
+
+    They ALSO hire people remotely, but only senior level developers,
+    and the stuff they do is HARD. Just so you know.
+    Contact them if you think your job is too easy.
 
 ----
 
@@ -43,8 +66,9 @@ How to diff XML
 
 .. note::
 
+    At Shoobx they deal a lot with legal documents.
     Although you can print your legal docs and sign them with a pen and then scan them into our system,
-    one of our benefits is that you don't have to do that.
+    one of the benefits of Shoobx is that you don't have to do that.
 
 ----
 
@@ -53,13 +77,13 @@ SBT + magic = PDF
 
 .. note::
 
-    You can create the legal document in our system and sign everything electronically.
+    You can create the legal document in Shoobx and sign everything electronically.
     There are workflows for doing all this and filling in documents,
     you can customize them and loads of things I only understand halfway because I'm not a lawyer.
 
     So we have loads of documents, many of them generated through our own template language,
-    unsurprisingly called "SBT" for "Shoobox templates".
-    (Psst, it's really mostly reportlab RML + ZPT and a bit of magic).
+    unsurprisingly called "SBT" for "Shoobx templates".
+    (Psst, it's really mostly Reportlab RML + Zope Page Templates + XSLT magic).
 
 ----
 
@@ -102,7 +126,7 @@ xmldiff 0.6
 
     Diffing XML was trickier than we thought, and why not use somebodies
     library? So, we took over maintenance of the xmldiff library. It existed,
-    seemed to work, but was unmaintained, which is why it wasn't used from
+    seemed to work, but was un-maintained, which is why it wasn't used from
     the start.
 
     It isn't only a library, it's also a command line tool.
@@ -120,7 +144,7 @@ xmldiff 0.6
 
     What you can see here is that instead of inserting a new paragraph three,
     and then changing the numbering, it modifies paragraph three, reinserts
-    it as paraphraph 4. It's worse than this, because it then deletes
+    it as paragraph 4. It's worse than this, because it then deletes
     paragraph 4 and reinserts it as paragraph five, and only then does
     it start to change the numbering, as it should do from the start.
 
@@ -180,7 +204,7 @@ xmldiff (again!)
     For these reasons I ended up scratching all of xmldiff, and writing a new
     library, which we after some discussion and deliberation decided to call
     <fanfare> xmldiff! This has been released as xmldiff version 2, current
-    version is 2.2.
+    version is 2.3.
 
     ->Almost entirely incompatible
 
@@ -190,7 +214,7 @@ xmldiff (again!)
 
     ->Easier to use as a library
 
-    ->Supports writing formatters! (I'll explain formatter later)
+    ->Supports writing formatters! (I'll explain formatters later)
 
 ----
 
@@ -225,20 +249,20 @@ Matching
     the same? Then they match.
 
     But how do you match? Just going line by line and comparing? No, you use
-    an algorithm called Longest Common Subsequence.
+    an algorithm called Longest Common Sub-sequence.
 
 ----
 
-Longest Common Subsequence
-==========================
+Longest Common Sub-sequence
+===========================
 
 .. class:: substep
 
     Old: 1 2 3 4 5 6 7 8
 
-    New: 1 2 9 4 6 5 7 7
+    New: 5 2 3 4 7 5 3 8
 
-    LCS: 1 2 4 6 7
+    LCS: 2 3 4 5 8
 
 .. note::
 
@@ -253,31 +277,41 @@ Longest Common Subsequence
 
 ----
 
-MAKE AN IMAGE HERE
+.. image:: images/lcsgrid1.png
 
 .. note::
 
-    Longest Common Subsequence makes a grid of all items vs all items,
-    and then walks through them to find the shortest path from one corner to the other corner.
+    Longest Common Sub-sequence, in theory, makes a grid of all items vs all items,
+    and maps out how many characters in common you have.
 
-    As you see, this grid gets quickly larger with increasing file sizes,
-    and it's worse than that,
-    because each cell also keeps track of the way you reach that cell,
-    so that if you end up in the same cell twice you can see how you got there.
+    As you see, this grid gets quickly larger with increasing file sizes.
     It can use a lot of memory, typically time and memory is quadratic.
 
 ----
 
-MAKE AN IMAGE HERE
+.. image:: images/lcsgrid2.png
 
 .. note::
 
-    But I read through all Python implementations of LCS I could find,
-    and I found one using a common version that just keeps track of the paths,
-    and doesn't generate the actual array, and doesn't keep the history per node.
+    After generating this grid, you then walk through the grid backwards to find
+    the shortest path from one corner to the other corner. That's also slow.
 
-    Another good trick is to compare the start and the end of the sequences,
-    and skip anything that us equal there.
+    But I read through a lot of implementations of LCS, and I found a few tricks.
+    The most common one is to keep track of how you got to each grid, which speeds up
+    the backtracking, but uses even more memory.
+
+    One implementation I found by someone called Chris Marchetti actually makes
+    the more sensible thing of building up paths instead of building a grid,
+    and then choosing the shortest path. This saves a lot of memory.
+
+----
+
+:data-x: r0
+
+.. note::
+
+    Another good trick to speed it up is to compare the start and the end of the sequences,
+    and skip anything that is equal there.
 
     The end result has 30 lines of actual code,
     so it's fairly compact and fast, but I'm sure it still can be improved.
@@ -285,6 +319,8 @@ MAKE AN IMAGE HERE
     please dig your teeth into it.
 
 ----
+
+:data-x: r1200
 
 Editing
 =======
@@ -320,7 +356,7 @@ Output
 
 .. note::
 
-    And then we use that edit script to make a nice looking output output.
+    And then we use that edit script to make a nice looking output.
 
     Not so hard, is it? But if XML was this easy, I wouldn't have a talk.
     So, how to do it?
@@ -354,9 +390,9 @@ Matching XML
 
     -> For example, these two nodes, a para node and a b node, gets converted
     into six simple nodes.
-    ->
 
-    Now every node only has an type, a value, and children.
+    -> Now every node only has an type, a value, and children.
+
     Comparison is now easy!
 
 ----
@@ -413,7 +449,7 @@ No match!
 
 ----
 
-:data-x: r-16000
+:data-x: r-17200
 
 .. note::
 
@@ -421,7 +457,7 @@ No match!
 
 ----
 
-:data-x: r17200
+:data-x: r18400
 
 Node:
 =====
@@ -445,7 +481,7 @@ Value:
 
     I make a string out of the nodes attributes and it's texts, and then use
     the standard library's ``difflib`` to get a similarity ratio out of that.
-    And that actually uses the Longest Common Subsequence method I mentioned
+    And that actually uses the Longest Common Sub-sequence method I mentioned
     before. If the node has children, I also take that into account in equal
     measure to the difflibs ratio.
 
@@ -468,10 +504,10 @@ Matching procedure: LCS?
 
 .. note::
 
-    Longest common subsequence can be used in theory. You can flatten both trees
+    Longest common sub-sequence can be used in theory. You can flatten both trees
     with a traversal, and then use LCS on that, -> but it leaves a lot of nodes
     unmatched that could be matched. It also means you don't always find the
-    best match, only a good enough match, wich is far from optimal.
+    best match, only a good enough match, which is far from optimal.
 
     The diffs get very big, not at all compact as we want them
 
@@ -514,7 +550,7 @@ Single-iteration best match
     It was also the recommended way in the main paper that we used on how to
     do hierarchical diffing.
 
-    This could take almost two minutesfor some of our documents, so I hope
+    This could take almost two minutes for some of our documents, so I hope
     you forgive me for not even trying the previous stable marriage
     algorithms, which are even slower.
 
@@ -566,8 +602,10 @@ Making the edit script
 
 .. note::
 
-    Now we have a list of node matchings.
-    Then we go over the tree again, node by node.
+    Now we have a list of node matchings,
+    and from that we should make an edit script.
+
+    -> So we go over the tree again, node by node.
 
     -> If that node has a match, we must look at what the differences are. In
     the plain text case we can match on equality, but for complex nodes like
@@ -711,14 +749,29 @@ XSLT gotcha
     or modify the XSLT so that it isn't called for deleted nodes.
 
     But most likely you don't do this advanced stuff, so you might think
-    "Oooh, I'm gonna diff my HTML docs with xmldiff!" and then we come to the
+    "Ooh, I'm gonna diff my HTML docs with xmldiff!" and then we come to the
     next problem!
 
 
 ----
 
-Matching text
-=============
+diff-match-patch
+================
+
+Semantic text diffing
+
+Pros
+----
+
+Works
+
+Cons
+----
+
+No proper releases
+
+Different modules for Py2 and Py3
+
 
 
 .. note::
@@ -726,8 +779,8 @@ Matching text
     Another problem we get here is how to match text. If we just use LCS on
     the text, we'll get very hard to read diffs.
 
-    So we need some sort of semantic diffing there.
-    And we decided to use Googles diff_match_patch_library modules.
+    So we need some sort of semantic diffing there, a diff that understands
+    words. So we decided to use Googles diff_match_patch library modules.
 
 ----
 
@@ -795,8 +848,8 @@ Unicode stubs
 
 ----
 
-Soooo slooow
-============
+So! slow!
+=========
 
 .. class:: substep
 
@@ -868,8 +921,7 @@ How can YOU use it?
 .. note::
 
     You can of course use it from the command line, but that's not
-    so exciting. What you really want to know is how to use it from Python,
-    amiright?
+    so exciting. What you really want to know is how to use it from Python!
 
     Well, it has a very simple API, here is one example, to diff two files.
     The result you get in that case is an edit script.
@@ -896,10 +948,10 @@ XML Output
 
 .. note::
 
-    Or you can specify the XMLFormmater to get XML output.
+    Or you can specify the XMLFormatter to get XML output.
     The text_tags argument are a list of tags that contain formatted text,
     which enables the unicode substitution I mentioned before.
-    A list of formatting_tags is there to enable the feature that reformmated
+    A list of formatting_tags is there to enable the feature that reformatted
     text isn't shown as deleted with one format and inserted with another,
     but the text is instead shown in a way that makes clear that only the
     formatting has changed. How that is is up to you, but maybe with a yellow
