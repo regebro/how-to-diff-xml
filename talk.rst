@@ -99,19 +99,11 @@ SBT + magic = PDF
 
 .. image:: images/docdiffsemantic.png
 
-.. class:: substep
-
-    .. image:: images/docdiffnope.png
-
 .. note::
 
     Obviously a text diff won't do,
     we need the sort of WYSIWYG difference where inserts are shown in green,
     and deletes are shown in red and with a strike through.
-
-    It should be easy to read, and semantically meaningful. Ie, if you
-    replace a word, it should show that in the diff, -> it shouldn't show
-    that what characters in that word needs replacing. That's not readable.
 
     The first effort of making a diff for templates worked, but has less than
     optimal results. It was implemented by someone else than me, and I'm told
@@ -632,7 +624,7 @@ Generate output
     want that nice GUI diff. How do you do THAT?
 
     What we want is an XML output that we still can render to a document,
-    but which includes diff information. We want this:
+    but which includes diff information. We want maybe something like this:
 
 ----
 
@@ -649,6 +641,8 @@ End Result
 
 .. note::
 
+    Something that has classes that we can add styles to. So the delete class
+    can be for example, a red font with a strike through!
     So how can we get there? Xmldiff 2 includes formatters for different
     outputs, including one just called "XML" that will give this sort of
     output:
@@ -682,7 +676,7 @@ XSLT gotcha
 
   <app:term name="expenses" set="advisor"
       allowCustom="True">
-    <app:option name="bear_own">
+    <app:option name="own_cost">
       <whatever/>
     </app:option>
 
@@ -698,6 +692,11 @@ XSLT gotcha
 
     And we have XSLT that deals with this.
 
+    This means that the whatever section will be used if the "expenses" term is
+    set to own_cost, but the blahblah section is used if expenses is reimburse.
+
+    So how is this implemented?
+
 ----
 
 .. code:: xml
@@ -707,36 +706,33 @@ XSLT gotcha
 
 .. note::
 
-    And one part of that XSLT is this. Yes, in XSLT you can call functions,
+    It's implemented by having the XSLT call a function!
+    Yes, in XSLT you can call functions,
     and with lxml, which we are using, those can be python functions.
 
-    That function gets the title of the field from the app:term, and sets it
-    on the app:option.
-
-    But, if app:option is not a child of an app:term, that function breaks!
+    But, if app:option is not a child of an app:term, that function would break!
     Now how can that happen after diffing? Well, it's a node mismatch again.
-    In one version a section of the document might be inside one of these
+    In one version the whatever section of the document might be inside one of these
     app:term/app:option tags, and later version, that section is inside some
     other sort of tag.
 
     And this can lead to a mismatch. Some nodes attributes and content is
-    very similar to the app:term, so we get a match! But only for one of the
-    options. The other options get deleted.
+    very similar to the app:term, so we get a match!
 
 ----
 
 .. code:: xml
 
-  <asection name="expenses" allowCustom="True"
+  <section name="expenses" allowCustom="True"
       diff:rename="app:term" diff:delete-attr="set">
     <whatever diff:delete="" diff:insert="" />
     <app:option name="bear_own" diff:delete="">
     </app:option>
 
-    <blahblah diff:delete="" diff:insert="" />
     <app:option name="reimburse" diff:delete="">
+      <blahblah/>
     </app:option>
-  </app:term>
+  </section>
 
 .. note::
 
@@ -755,32 +751,43 @@ XSLT gotcha
 
 ----
 
-diff-match-patch
-================
+LCS on text
+===========
 
-Semantic text diffing
-
-Pros
-----
-
-Works
-
-Cons
-----
-
-No proper releases
-
-Different modules for Py2 and Py3
-
-
+.. image:: images/docdiffnope.png
 
 .. note::
 
     Another problem we get here is how to match text. If we just use LCS on
     the text, we'll get very hard to read diffs.
 
+----
+
+diff-match-patch
+================
+
+.. image:: images/docdiffsemantic.png
+
+.. note::
+
     So we need some sort of semantic diffing there, a diff that understands
     words. So we decided to use Googles diff_match_patch library modules.
+
+----
+
+diff-match-patch
+================
+
+No proper releases
+
+Different modules for Py2 and Py3
+
+.. note::
+
+    It doesn't have proper releases on PyPI, so we actually include it in xmldiff,
+    and we include both the Python 2 and the Python 3 version. I have a makefile target
+    to update them to the latest version before release.
+
 
 ----
 
@@ -803,13 +810,13 @@ New:
 
 .. note::
 
-    Formatted text has it's own little issues.
+    But formatted text has it's own little issues, that semantic knowledge of the text doesn't help with!
 
     For example, if you simply add a bit of formatting to some text, you have
     very big effects.
 
-    The text of the P-node has changed from "This is text that can have
-    formatting" to "This". The node also have two new children.
+    The text of the P-node has changed from "This is formated text" to
+    just "This". The node also have two new children.
 
     The old P node and the new P node will not match. Oy vey, what to do?
 
@@ -826,11 +833,16 @@ Unicode stubs
     This means the nodes will match, but since the contained text isn't the
     same we get an edit script action to update that text.
 
-    The formatter that outputs the XML knows that these unicode characters
-    are replacements, and will insert the correct tags.
+    The formatter that outputs the XML will insert these stubs before diffing and
+    replace them back with the correct tags after diffing.
 
-    And the characters used are from the Private User are in Unicode, don't
+    And the characters used are from the Private User Area in Unicode, don't
     worry.
+
+    It's from the small 16-bit area in Unicode so it works on narrow builds
+    of python, once Python 2 support is dropped it will be another larger
+    unicode area, but you are unlikely to run out of replacement characters
+    in any case.
 
 ----
 
@@ -863,9 +875,9 @@ So! slow!
 
 .. note::
 
-    As I mentioned before, xmldiff 2.0 was very slow. The worst diff case we
-    had took more than one and a half minute. So I went on to trying to
-    improve that, making the matching faster etc.
+    The first versions of the new implementation of xmldiff was very slow.
+    The worst diff case we had took more than one and a half minute.
+    So I went on to trying to improve that, making the matching faster etc.
 
     One of the biggest speedups was implementing a shortcut. -> If any match
     was 100%, then we'd stop looking for better matchings. -> I also added a
